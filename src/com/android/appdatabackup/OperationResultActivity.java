@@ -128,8 +128,8 @@ public class OperationResultActivity extends Activity {
             final boolean rowOk = success != null && success[i];
             status.setImageResource(rowOk ? R.drawable.ic_check_24 : R.drawable.ic_clear_24);
             status.setImageTintList(ColorStateList.valueOf(
-                    themeColor(rowOk ? com.google.android.material.R.attr.colorPrimary
-                            : com.google.android.material.R.attr.colorError)));
+                    themeColor(rowOk ? android.R.attr.colorPrimary
+                            : android.R.attr.colorError)));
             final String msg = messages != null && i < messages.length ? messages[i] : "";
             if (!rowOk && msg != null && !msg.isEmpty()) {
                 message.setText(msg);
