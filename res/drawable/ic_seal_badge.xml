@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 VoltageOS
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<!-- A 12-lobe scalloped "seal" badge, filled white so it can be tinted
+     (success -> colorPrimaryContainer, failure -> colorErrorContainer)
+     via app:tint / setImageTintList at runtime. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp" android:height="120dp"
+    android:viewportWidth="120" android:viewportHeight="120">
+    <path android:fillColor="@android:color/white"
+        android:pathData="M 116.00,60.00 L 111.57,65.42 L 104.16,69.39 L 102.94,73.95 L 107.37,81.09 L 108.50,88.00 L 101.95,90.48 L 93.55,90.21 L 90.21,93.55 L 90.48,101.95 L 88.00,108.50 L 81.09,107.37 L 73.95,102.94 L 69.39,104.16 L 65.42,111.57 L 60.00,116.00 L 54.58,111.57 L 50.61,104.16 L 46.05,102.94 L 38.91,107.37 L 32.00,108.50 L 29.52,101.95 L 29.79,93.55 L 26.45,90.21 L 18.05,90.48 L 11.50,88.00 L 12.63,81.09 L 17.06,73.95 L 15.84,69.39 L 8.43,65.42 L 4.00,60.00 L 8.43,54.58 L 15.84,50.61 L 17.06,46.05 L 12.63,38.91 L 11.50,32.00 L 18.05,29.52 L 26.45,29.79 L 29.79,26.45 L 29.52,18.05 L 32.00,11.50 L 38.91,12.63 L 46.05,17.06 L 50.61,15.84 L 54.58,8.43 L 60.00,4.00 L 65.42,8.43 L 69.39,15.84 L 73.95,17.06 L 81.09,12.63 L 88.00,11.50 L 90.48,18.05 L 90.21,26.45 L 93.55,29.79 L 101.95,29.52 L 108.50,32.00 L 107.37,38.91 L 102.94,46.05 L 104.16,50.61 L 111.57,54.58 Z" />
+</vector>

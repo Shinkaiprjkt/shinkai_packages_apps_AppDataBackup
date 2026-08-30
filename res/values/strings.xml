@@ -90,8 +90,6 @@
     <string name="verify_failed_badge">Failed verification</string>
     <string name="verify_all_message">Verifies checksums of every backup. Enter the passphrase to include encrypted backups, or leave empty to skip them.</string>
     <string name="verify_all_result">%1$d valid \u00b7 %2$d failed \u00b7 %3$d skipped</string>
-    <string name="results_title_backup">Backup results</string>
-    <string name="results_title_restore">Restore results</string>
     <string name="deleted_backup">Deleted %1$s</string>
     <string name="undo">Undo</string>
     <string name="export">Export</string>
@@ -113,4 +111,19 @@
     <string name="quick_action_backup_apps_desc">Choose apps to snapshot</string>
     <string name="quick_action_restore">Restore</string>
     <string name="quick_action_restore_desc">Browse and restore backups</string>
+
+    <string name="section_already_backed_up">Already backed up (%1$d)</string>
+    <string name="section_not_backed_up">Not backed up yet (%1$d)</string>
+
+    <string name="result_title_backup_success">Backup successful!</string>
+    <string name="result_title_backup_partial">Backup finished with errors</string>
+    <string name="result_title_restore_success">Restore successful!</string>
+    <string name="result_title_restore_partial">Restore finished with errors</string>
+    <string name="result_subtitle_backup">%1$d apps backed up</string>
+    <string name="result_subtitle_backup_one">1 app backed up</string>
+    <string name="result_subtitle_restore">%1$d apps restored</string>
+    <string name="result_subtitle_restore_one">1 app restored</string>
+    <string name="result_subtitle_with_failures">%1$d succeeded \u00b7 %2$d failed</string>
+    <string name="result_view_details">View details</string>
+    <string name="result_done">Done</string>
 </resources>

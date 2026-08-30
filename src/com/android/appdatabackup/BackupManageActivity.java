@@ -23,6 +23,7 @@ import android.app.appbackup.BackupRecord;
 import android.app.appbackup.BackupResult;
 import android.app.appbackup.IBackupProgressCallback;
 import android.app.appbackup.IRestoreProgressCallback;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.animation.ValueAnimator;
@@ -93,6 +94,26 @@ public class BackupManageActivity extends Activity {
     public static final int TAB_APPS = 0;
     public static final int TAB_BACKUPS = 1;
 
+    private static final int REQ_OPERATION_RESULT = 501;
+
+    /** One package's outcome from a finished backup or restore run. */
+    private static final class OpEntry {
+        final String pkg;
+        final boolean success;
+        final String message;
+        OpEntry(String pkg, boolean success, String message) {
+            this.pkg = pkg;
+            this.success = success;
+            this.message = message;
+        }
+    }
+
+    /** A row in the grouped Apps list: either a section label or an app entry. */
+    private static final class SectionHeader {
+        final String label;
+        SectionHeader(String label) { this.label = label; }
+    }
+
     private AppDataBackupRestoreManager mManager;
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
@@ -132,10 +153,11 @@ public class BackupManageActivity extends Activity {
     private final List<BackupRecord> mBackups = new ArrayList<>();
     private final Set<String> mSelectedBackupIds = new HashSet<>();
     private final List<AppBackupInfo> mVisibleApps = new ArrayList<>();
+    private final List<Object> mAppRows = new ArrayList<>();
     private final Map<String, Long> mLastBackupByPkg = new HashMap<>();
     private final Set<String> mNoBackupPkgs = new HashSet<>();
     private final Set<String> mCorruptedBackupIds = new HashSet<>();
-    private final List<String> mOpResults = new ArrayList<>();
+    private final List<OpEntry> mOpResults = new ArrayList<>();
     private final SimpleDateFormat mMetaDateFormat =
             new SimpleDateFormat("MMM d, HH:mm", Locale.getDefault());
     private String mAppQuery = "";
@@ -192,6 +214,17 @@ public class BackupManageActivity extends Activity {
         final int initialTab = getIntent().getIntExtra(EXTRA_INITIAL_TAB, TAB_APPS);
         if (initialTab == TAB_BACKUPS) {
             mViewPager.setCurrentItem(TAB_BACKUPS, false);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_OPERATION_RESULT && resultCode == RESULT_OK && data != null) {
+            final int tab = data.getIntExtra(OperationResultActivity.EXTRA_GOTO_TAB, -1);
+            if (tab == TAB_APPS || tab == TAB_BACKUPS) {
+                mViewPager.setCurrentItem(tab, true);
+            }
         }
     }
 
@@ -294,7 +327,36 @@ public class BackupManageActivity extends Activity {
         } else {
             mVisibleApps.sort((a, b) -> a.getLabel().compareToIgnoreCase(b.getLabel()));
         }
+        buildAppRows();
         if (mAppAdapter != null) mAppAdapter.notifyDataSetChanged();
+    }
+
+    /**
+     * Groups {@link #mVisibleApps} into "Already backed up" / "Not backed up
+     * yet" sections (each with its own header row) so the Apps list reads
+     * the same way as the app-selection screen it's modeled after.
+     */
+    private void buildAppRows() {
+        mAppRows.clear();
+        final List<AppBackupInfo> backedUp = new ArrayList<>();
+        final List<AppBackupInfo> notBackedUp = new ArrayList<>();
+        for (AppBackupInfo info : mVisibleApps) {
+            if (mLastBackupByPkg.containsKey(info.getPackageName())) {
+                backedUp.add(info);
+            } else {
+                notBackedUp.add(info);
+            }
+        }
+        if (!backedUp.isEmpty()) {
+            mAppRows.add(new SectionHeader(
+                    getString(R.string.section_already_backed_up, backedUp.size())));
+            mAppRows.addAll(backedUp);
+        }
+        if (!notBackedUp.isEmpty()) {
+            mAppRows.add(new SectionHeader(
+                    getString(R.string.section_not_backed_up, notBackedUp.size())));
+            mAppRows.addAll(notBackedUp);
+        }
     }
 
     private void clearSelection() {
@@ -486,7 +548,7 @@ public class BackupManageActivity extends Activity {
                 mSelectedBackupIds.retainAll(ids);
                 mCorruptedBackupIds.retainAll(ids);
                 mBackupAdapter.notifyDataSetChanged();
-                if (mAppAdapter != null) mAppAdapter.notifyDataSetChanged();
+                applyAppFilter();
                 updateBackupSelectionUi();
             });
         });
@@ -611,8 +673,7 @@ public class BackupManageActivity extends Activity {
                     public void onBackupFinished(String token, BackupResult result) {
                         mMainHandler.post(() -> {
                             hideProgress();
-                            showOpResults(R.string.results_title_backup, result.isSuccess(),
-                                    result.isSuccess() ? "Backup complete" : result.getMessage());
+                            showOperationResult(OperationResultActivity.TYPE_BACKUP);
                             loadBackupsAsync();
                         });
                     }
@@ -891,25 +952,49 @@ public class BackupManageActivity extends Activity {
 
     private void recordOpResult(String pkg, BackupResult result) {
         synchronized (mOpResults) {
-            mOpResults.add((result.isSuccess() ? "\u2713 " : "\u2717 ") + pkg
-                    + (result.isSuccess() ? "" : " \u2014 " + result.getMessage()));
+            mOpResults.add(new OpEntry(pkg, result.isSuccess(), result.getMessage()));
         }
     }
 
-    private void showOpResults(int titleRes, boolean allOk, String fallbackToast) {
-        final List<String> lines;
+    /**
+     * Launches the animated {@link OperationResultActivity} with a snapshot
+     * of everything {@link #recordOpResult} collected during the run that
+     * just finished.
+     */
+    private void showOperationResult(int type) {
+        final List<OpEntry> entries;
         synchronized (mOpResults) {
-            lines = new ArrayList<>(mOpResults);
+            entries = new ArrayList<>(mOpResults);
         }
-        if (allOk || lines.isEmpty()) {
-            Toast.makeText(this, fallbackToast, Toast.LENGTH_LONG).show();
-            return;
+        final int n = entries.size();
+        final String[] labels = new String[n];
+        final String[] packages = new String[n];
+        final boolean[] success = new boolean[n];
+        final String[] messages = new String[n];
+        for (int i = 0; i < n; i++) {
+            final OpEntry e = entries.get(i);
+            packages[i] = e.pkg;
+            labels[i] = findAppLabel(e.pkg);
+            success[i] = e.success;
+            messages[i] = e.message == null ? "" : e.message;
         }
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(titleRes)
-                .setMessage(TextUtils.join("\n", lines))
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+        final Intent intent = new Intent(this, OperationResultActivity.class);
+        intent.putExtra(OperationResultActivity.EXTRA_TYPE, type);
+        intent.putExtra(OperationResultActivity.EXTRA_LABELS, labels);
+        intent.putExtra(OperationResultActivity.EXTRA_PACKAGES, packages);
+        intent.putExtra(OperationResultActivity.EXTRA_SUCCESS, success);
+        intent.putExtra(OperationResultActivity.EXTRA_MESSAGES, messages);
+        startActivityForResult(intent, REQ_OPERATION_RESULT);
+    }
+
+    private String findAppLabel(String pkg) {
+        for (AppBackupInfo info : mApps) {
+            if (info.getPackageName().equals(pkg)) return info.getLabel();
+        }
+        for (BackupRecord r : mBackups) {
+            if (r.getPackageName().equals(pkg)) return r.getLabel();
+        }
+        return pkg;
     }
 
     private void confirmDeleteSelected() {
@@ -970,10 +1055,7 @@ public class BackupManageActivity extends Activity {
                     public void onRestoreFinished(String token, BackupResult result) {
                         mMainHandler.post(() -> {
                             hideProgress();
-                            showOpResults(R.string.results_title_restore, result.isSuccess(),
-                                    result.isSuccess()
-                                            ? "Restore complete - relaunch the app"
-                                            : "Restore failed: " + result.getMessage());
+                            showOperationResult(OperationResultActivity.TYPE_RESTORE);
                             mSelectedBackupIds.clear();
                             updateBackupSelectionUi();
                             if (mBackupAdapter != null) mBackupAdapter.notifyDataSetChanged();
@@ -1106,18 +1188,36 @@ public class BackupManageActivity extends Activity {
     }
 
     private final class AppListAdapter
-            extends RecyclerView.Adapter<AppListAdapter.ViewHolder> {
+            extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+        private static final int TYPE_HEADER = 0;
+        private static final int TYPE_APP = 1;
+
+        @Override
+        public int getItemViewType(int position) {
+            return mAppRows.get(position) instanceof SectionHeader ? TYPE_HEADER : TYPE_APP;
+        }
 
         @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            if (viewType == TYPE_HEADER) {
+                return new HeaderViewHolder(LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.item_section_header, parent, false));
+            }
             return new ViewHolder(LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_app, parent, false));
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            final AppBackupInfo info = mVisibleApps.get(position);
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder rawHolder, int position) {
+            final Object row = mAppRows.get(position);
+            if (row instanceof SectionHeader) {
+                ((HeaderViewHolder) rawHolder).label.setText(((SectionHeader) row).label);
+                return;
+            }
+            final ViewHolder holder = (ViewHolder) rawHolder;
+            final AppBackupInfo info = (AppBackupInfo) row;
             final boolean selected = mSelectedPackages.contains(info.getPackageName());
             holder.label.setText(info.getLabel());
             holder.pkg.setText(info.getPackageName() + "  v" + info.getVersionName());
@@ -1156,7 +1256,7 @@ public class BackupManageActivity extends Activity {
         }
 
         @Override
-        public int getItemCount() { return mVisibleApps.size(); }
+        public int getItemCount() { return mAppRows.size(); }
 
         class ViewHolder extends RecyclerView.ViewHolder {
             MaterialCardView card;
@@ -1175,6 +1275,14 @@ public class BackupManageActivity extends Activity {
                 dataSize = v.findViewById(R.id.tv_data_size);
                 lastBackup = v.findViewById(R.id.tv_last_backup);
                 checkbox = v.findViewById(R.id.checkbox);
+            }
+        }
+
+        class HeaderViewHolder extends RecyclerView.ViewHolder {
+            TextView label;
+            HeaderViewHolder(View v) {
+                super(v);
+                label = v.findViewById(R.id.tv_section_label);
             }
         }
     }
