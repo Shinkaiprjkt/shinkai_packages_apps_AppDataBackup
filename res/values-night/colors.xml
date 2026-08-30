@@ -32,4 +32,12 @@
     <color name="md_surface_variant">#1E2023</color>
     <color name="md_on_surface_variant">#C4C6CA</color>
     <color name="md_error">#FFB4AB</color>
+
+    <!-- Dashboard accent tones (Overview + quick action cards) -->
+    <color name="accent_overview_container">#5C1A16</color>
+    <color name="accent_overview_on_container">#FFDAD9</color>
+    <color name="accent_backup_container">#5C1233</color>
+    <color name="accent_backup_on_container">#FFD8E4</color>
+    <color name="accent_restore_container">#423200</color>
+    <color name="accent_restore_on_container">#F0E1A6</color>
 </resources>

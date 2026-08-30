@@ -102,6 +102,19 @@
         <item name="cornerRadius">14dp</item>
     </style>
 
+    <!--
+         Labeled CTA button inside a FloatingToolbarLayout (e.g. "Back up",
+         "Restore"). FloatingToolbarLayout can clamp its own width tighter
+         than the row's natural content width, and a plain MaterialButton
+         has no line limit, so its label wraps character-by-character
+         instead of staying on one line. Forcing single-line + ellipsis
+         here keeps the label readable no matter how tight the toolbar gets.
+    -->
+    <style name="Widget.AppDataBackup.Button.Toolbar" parent="Widget.Material3.Button">
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
     <style name="ThemeOverlay.AppDataBackup.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="shapeAppearanceOverlay">@style/ShapeAppearance.AppDataBackup.Dialog</item>
     </style>

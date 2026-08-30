@@ -98,4 +98,19 @@
     <string name="export_message">Copy the backup of %1$s to your Download folder?</string>
     <string name="export_done">Saved to %1$s</string>
     <string name="export_failed">Export failed</string>
+
+    <string name="overview_section_title">Overview</string>
+    <string name="overview_last_backup_title">Last backup</string>
+    <string name="overview_last_backup_none">No backups yet</string>
+    <string name="overview_last_backup_summary">%1$d apps backed up</string>
+    <string name="overview_last_backup_summary_one">1 app backed up</string>
+    <string name="overview_last_backup_time">Latest: %1$s</string>
+    <string name="overview_storage_title">Storage</string>
+    <string name="overview_storage_used">%1$d%% used (%2$s / %3$s)</string>
+    <string name="overview_storage_backup_used">%1$d%% used by backups (%2$s / %3$s)</string>
+    <string name="quick_actions_section_title">Quick actions</string>
+    <string name="quick_action_backup_apps">Back up apps</string>
+    <string name="quick_action_backup_apps_desc">Choose apps to snapshot</string>
+    <string name="quick_action_restore">Restore</string>
+    <string name="quick_action_restore_desc">Browse and restore backups</string>
 </resources>

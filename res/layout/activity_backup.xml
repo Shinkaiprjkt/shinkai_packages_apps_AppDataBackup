@@ -300,7 +300,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_backup"
-                style="@style/Widget.Material3.Button"
+                style="@style/Widget.AppDataBackup.Button.Toolbar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/action_back_up"
@@ -368,7 +368,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_restore_selected"
-                style="@style/Widget.Material3.Button"
+                style="@style/Widget.AppDataBackup.Button.Toolbar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/restore"
