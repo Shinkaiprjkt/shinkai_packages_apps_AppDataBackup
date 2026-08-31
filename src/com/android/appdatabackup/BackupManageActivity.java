@@ -26,6 +26,7 @@ import android.app.appbackup.IRestoreProgressCallback;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -127,16 +128,25 @@ public class BackupManageActivity extends Activity {
     private MaterialButton mBackupBtn;
     private MaterialButton mExcludeCacheBtn;
     private LoadingIndicator mLoadingIndicator;
-    private LinearProgressIndicator mProgressBar;
-    private View mProgressRow;
-    private TextView mProgressText;
+    private View mProgressOverlay;
+    private LinearLayout mProgressSegmentBar;
+    private com.google.android.material.progressindicator.CircularProgressIndicator mProgressRing;
+    private FrameLayout mProgressAvatarBox;
+    private ImageView mProgressImgAvatar;
+    private TextView mProgressTvAvatar;
+    private TextView mProgressAppName;
+    private TextView mProgressSubtitle;
+    private TextView mProgressHeader;
+    private ImageView mProgressChevron;
+    private LinearLayout mProgressListContainer;
+    private View mProgressListCard;
+    private boolean mProgressListExpanded = false;
+    private final List<String> mProgressBatchPkgs = new ArrayList<>();
+    private final Map<String, View> mProgressRowByPkg = new HashMap<>();
+    private int mProgressDoneCount;
     private FloatingToolbarLayout mBackupsToolbar;
     private MaterialButton mRestoreSelectedBtn;
     private MaterialButton mDeleteSelectedBtn;
-    private int mBackupTotal;
-    private int mBackupDone;
-    private long mBackupBytesTotal;
-    private long mBackupBytesDone;
     private TextView mSummaryCount;
     private TextView mSummarySize;
     private RecyclerView mAppsRv;
@@ -182,9 +192,18 @@ public class BackupManageActivity extends Activity {
         mBackupBtn = findViewById(R.id.btn_backup);
         mExcludeCacheBtn = findViewById(R.id.btn_exclude_cache);
         mLoadingIndicator = findViewById(R.id.loading_indicator);
-        mProgressBar = findViewById(R.id.progress_bar);
-        mProgressRow = findViewById(R.id.progress_row);
-        mProgressText = findViewById(R.id.progress_text);
+        mProgressOverlay = findViewById(R.id.progress_overlay);
+        mProgressSegmentBar = findViewById(R.id.progress_segment_bar);
+        mProgressRing = findViewById(R.id.progress_ring);
+        mProgressAvatarBox = findViewById(R.id.progress_avatar_box);
+        mProgressImgAvatar = findViewById(R.id.progress_img_avatar);
+        mProgressTvAvatar = findViewById(R.id.progress_tv_avatar);
+        mProgressAppName = findViewById(R.id.tv_progress_app_name);
+        mProgressSubtitle = findViewById(R.id.tv_progress_subtitle);
+        mProgressHeader = findViewById(R.id.tv_progress_header);
+        mProgressChevron = findViewById(R.id.img_progress_chevron);
+        mProgressListContainer = findViewById(R.id.progress_list_container);
+        mProgressListCard = findViewById(R.id.card_progress_list);
         mBackupsToolbar = findViewById(R.id.floating_toolbar_backups);
         mRestoreSelectedBtn = findViewById(R.id.btn_restore_selected);
         mDeleteSelectedBtn = findViewById(R.id.btn_delete_selected);
@@ -206,6 +225,7 @@ public class BackupManageActivity extends Activity {
         setupFloatingToolbar();
         setupBackupsToolbar();
         setupSearchAndSort();
+        setupProgressOverlay();
         setupViewPager();
         updateSummary();
         loadAppsAsync();
@@ -260,6 +280,15 @@ public class BackupManageActivity extends Activity {
                 return;
             }
             startBatchRestore();
+        });
+    }
+
+    private void setupProgressOverlay() {
+        findViewById(R.id.btn_progress_cancel).setOnClickListener(v -> cancelCurrentOperation());
+        findViewById(R.id.row_progress_header).setOnClickListener(v -> {
+            mProgressListExpanded = !mProgressListExpanded;
+            mProgressListContainer.setVisibility(mProgressListExpanded ? View.VISIBLE : View.GONE);
+            mProgressChevron.setRotation(mProgressListExpanded ? 180f : 0f);
         });
     }
 
@@ -640,23 +669,21 @@ public class BackupManageActivity extends Activity {
         synchronized (mOpResults) {
             mOpResults.clear();
         }
-        showProgress("Preparing backup...");
+        final List<String> batch = new ArrayList<>(mSelectedPackages);
+        startProgressUi(batch);
 
         mCurrentOperationToken = mManager.backupPackages(
-                new ArrayList<>(mSelectedPackages),
+                batch,
                 mBackupDir.getAbsolutePath(),
                 excludeCache,
                 new IBackupProgressCallback.Stub() {
                     @Override
-                    public void onBackupStarted(String token, int total) {
-                        beginDeterminateProgress(total);
-                        updateProgress("Backing up 0 / " + total + " apps...");
-                    }
+                    public void onBackupStarted(String token, int total) {}
 
                     @Override
                     public void onPackageBackupStarted(String token, String pkg,
                             int idx, int total) {
-                        updateProgress("Backing up " + pkg + " (" + idx + "/" + total + ")");
+                        markPackageStarted(pkg, getString(R.string.progress_backing_up_data));
                     }
 
                     @Override
@@ -666,7 +693,7 @@ public class BackupManageActivity extends Activity {
                             Log.w(TAG, "Backup failed for " + pkg + ": " + result.getMessage());
                         }
                         recordOpResult(pkg, result);
-                        advanceDeterminateProgress(pkg);
+                        markPackageDone(pkg, result.isSuccess());
                     }
 
                     @Override
@@ -772,7 +799,11 @@ public class BackupManageActivity extends Activity {
         final Chip extBox = view.findViewById(R.id.chip_ext);
 
         final List<String> ids = new ArrayList<>();
-        for (BackupRecord r : records) ids.add(r.getId());
+        final List<String> pkgNames = new ArrayList<>();
+        for (BackupRecord r : records) {
+            ids.add(r.getId());
+            pkgNames.add(r.getPackageName());
+        }
         final String dir = records.get(0).getBackupDir();
 
         final StringBuilder message =
@@ -817,7 +848,7 @@ public class BackupManageActivity extends Activity {
                         return;
                     }
                     passInput.setText("");
-                    doRestoreIds(ids, dir, pass.isEmpty() ? null : pass, components);
+                    doRestoreIds(ids, pkgNames, dir, pass.isEmpty() ? null : pass, components);
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
@@ -1019,12 +1050,12 @@ public class BackupManageActivity extends Activity {
                 .show();
     }
 
-    private void doRestoreIds(List<String> ids, String backupDir, String passphrase,
-            int components) {
+    private void doRestoreIds(List<String> ids, List<String> pkgNames, String backupDir,
+            String passphrase, int components) {
         synchronized (mOpResults) {
             mOpResults.clear();
         }
-        showProgress(getString(R.string.progress_restoring));
+        startProgressUi(pkgNames);
 
         mCurrentOperationToken = mManager.restorePackages(
                 ids,
@@ -1036,19 +1067,19 @@ public class BackupManageActivity extends Activity {
                     @Override
                     public void onPackageRestoreStarted(String token, String pkg,
                             int idx, int total) {
-                        updateProgress("Installing APK for " + pkg + "...");
-                        setDeterminateProgress(idx, total);
+                        markPackageStarted(pkg, getString(R.string.progress_installing_apk));
                     }
 
                     @Override
                     public void onPackageDataRestoring(String token, String pkg) {
-                        updateProgress("Restoring data for " + pkg + "...");
+                        updateProgressSubtitle(getString(R.string.progress_restoring_data));
                     }
 
                     @Override
                     public void onPackageRestoreFinished(String token, String pkg,
                             BackupResult result) {
                         recordOpResult(pkg, result);
+                        markPackageDone(pkg, result.isSuccess());
                     }
 
                     @Override
@@ -1074,12 +1105,20 @@ public class BackupManageActivity extends Activity {
                 }, passphrase, components);
     }
 
+    /**
+     * Lightweight progress state for single-message flows (verify / verify
+     * all) that don't have a per-app batch to visualize: shows the same
+     * overlay with an indeterminate ring and no segment bar / app list.
+     */
     private void showProgress(String message) {
         mMainHandler.post(() -> {
-            mProgressBar.setVisibility(View.VISIBLE);
-            mProgressBar.setIndeterminate(true);
-            mProgressRow.setVisibility(View.VISIBLE);
-            mProgressText.setText(message);
+            mProgressSegmentBar.setVisibility(View.GONE);
+            mProgressListCard.setVisibility(View.GONE);
+            mProgressAvatarBox.setVisibility(View.GONE);
+            mProgressRing.setIndeterminate(true);
+            mProgressAppName.setText("");
+            mProgressSubtitle.setText(message);
+            mProgressOverlay.setVisibility(View.VISIBLE);
             mBackupBtn.setEnabled(false);
             mRestoreSelectedBtn.setEnabled(false);
             mDeleteSelectedBtn.setEnabled(false);
@@ -1087,64 +1126,124 @@ public class BackupManageActivity extends Activity {
     }
 
     private void updateProgress(String message) {
-        mMainHandler.post(() -> mProgressText.setText(message));
+        mMainHandler.post(() -> mProgressSubtitle.setText(message));
     }
 
-    private void beginDeterminateProgress(int total) {
+    /**
+     * Full progress state for a batch backup/restore run: a segment per app
+     * in {@code pkgs} (filled in as each finishes), a circular avatar+ring
+     * for whichever app is currently being processed, and an expandable
+     * list of every app in the batch with its own status. All of this is
+     * driven from real per-package callback events -- the underlying
+     * backup engine only reports progress at the package level (not per
+     * component like APK/data/media), so that's the granularity shown here.
+     */
+    private void startProgressUi(List<String> pkgs) {
         mMainHandler.post(() -> {
-            long bytes = 0;
-            for (AppBackupInfo info : mApps) {
-                if (mSelectedPackages.contains(info.getPackageName())) {
-                    bytes += Math.max(0, info.getDataSize());
-                }
+            mProgressBatchPkgs.clear();
+            mProgressBatchPkgs.addAll(pkgs);
+            mProgressRowByPkg.clear();
+            mProgressDoneCount = 0;
+            mProgressListExpanded = false;
+            mProgressChevron.setRotation(0f);
+            mProgressListContainer.setVisibility(View.GONE);
+            mProgressSegmentBar.removeAllViews();
+            mProgressListContainer.removeAllViews();
+            mProgressSegmentBar.setVisibility(View.VISIBLE);
+            mProgressListCard.setVisibility(View.VISIBLE);
+            mProgressAvatarBox.setVisibility(View.VISIBLE);
+
+            final int segColorPending =
+                    themeColor(com.google.android.material.R.attr.colorSurfaceVariant);
+            for (int i = 0; i < pkgs.size(); i++) {
+                final String pkg = pkgs.get(i);
+
+                final View segment = new View(this);
+                final LinearLayout.LayoutParams lp =
+                        new LinearLayout.LayoutParams(0, dp(4), 1f);
+                if (i > 0) lp.leftMargin = dp(3);
+                segment.setLayoutParams(lp);
+                final GradientDrawable segBg = new GradientDrawable();
+                segBg.setCornerRadius(dp(2));
+                segBg.setColor(segColorPending);
+                segment.setBackground(segBg);
+                mProgressSegmentBar.addView(segment);
+
+                final View row = LayoutInflater.from(this)
+                        .inflate(R.layout.item_progress_app_row, mProgressListContainer, false);
+                ((TextView) row.findViewById(R.id.tv_label)).setText(findAppLabel(pkg));
+                final ImageView statusIcon = row.findViewById(R.id.img_status);
+                statusIcon.setImageResource(R.drawable.ic_pending_24);
+                statusIcon.setVisibility(View.VISIBLE);
+                row.findViewById(R.id.progress_spinner).setVisibility(View.GONE);
+                mProgressListContainer.addView(row);
+                mProgressRowByPkg.put(pkg, row);
             }
-            mBackupTotal = total;
-            mBackupDone = 0;
-            mBackupBytesTotal = bytes;
-            mBackupBytesDone = 0;
-            if (mProgressBar.isIndeterminate()) mProgressBar.setIndeterminate(false);
-            mProgressBar.setProgressCompat(0, false);
+
+            mProgressHeader.setText(
+                    getString(R.string.progress_list_header, 0, pkgs.size()));
+            mProgressRing.setIndeterminate(false);
+            mProgressRing.setProgressCompat(0, false);
+            mProgressAppName.setText("");
+            mProgressSubtitle.setText("");
+            mProgressOverlay.setVisibility(View.VISIBLE);
+            mBackupBtn.setEnabled(false);
+            mRestoreSelectedBtn.setEnabled(false);
+            mDeleteSelectedBtn.setEnabled(false);
         });
     }
 
-    private void advanceDeterminateProgress(String pkg) {
+    /** Call when a package's backup/restore begins: highlights it as the current app. */
+    private void markPackageStarted(String pkg, String subtitle) {
+        final String label = findAppLabel(pkg);
         mMainHandler.post(() -> {
-            long size = 0;
-            for (AppBackupInfo info : mApps) {
-                if (info.getPackageName().equals(pkg)) {
-                    size = Math.max(0, info.getDataSize());
-                    break;
-                }
+            mProgressAppName.setText(label);
+            mProgressSubtitle.setText(subtitle);
+            bindAvatar(mProgressAvatarBox, mProgressImgAvatar, mProgressTvAvatar, label, pkg);
+            final View row = mProgressRowByPkg.get(pkg);
+            if (row != null) {
+                row.findViewById(R.id.img_status).setVisibility(View.GONE);
+                row.findViewById(R.id.progress_spinner).setVisibility(View.VISIBLE);
             }
-            mBackupDone++;
-            mBackupBytesDone += size;
-            final int pct;
-            if (mBackupBytesTotal > 0) {
-                pct = (int) Math.max(0, Math.min(100,
-                        Math.round(mBackupBytesDone * 100f / mBackupBytesTotal)));
-            } else if (mBackupTotal > 0) {
-                pct = Math.max(0, Math.min(100,
-                        Math.round(mBackupDone * 100f / mBackupTotal)));
-            } else {
-                pct = 0;
-            }
-            if (mProgressBar.isIndeterminate()) mProgressBar.setIndeterminate(false);
-            mProgressBar.setProgressCompat(pct, true);
         });
     }
 
-    private void setDeterminateProgress(int idx, int total) {
-        if (total <= 0) return;
-        final int pct = Math.max(0, Math.min(100, Math.round(idx * 100f / total)));
+    /** Call when a package's backup/restore finishes: marks its row/segment done. */
+    private void markPackageDone(String pkg, boolean success) {
         mMainHandler.post(() -> {
-            if (mProgressBar.isIndeterminate()) mProgressBar.setIndeterminate(false);
-            mProgressBar.setProgressCompat(pct, true);
+            mProgressDoneCount++;
+            final int accent = themeColor(success
+                    ? android.R.attr.colorPrimary : android.R.attr.colorError);
+
+            final View row = mProgressRowByPkg.get(pkg);
+            if (row != null) {
+                row.findViewById(R.id.progress_spinner).setVisibility(View.GONE);
+                final ImageView icon = row.findViewById(R.id.img_status);
+                icon.setImageResource(success ? R.drawable.ic_check_24 : R.drawable.ic_clear_24);
+                icon.setImageTintList(ColorStateList.valueOf(accent));
+                icon.setVisibility(View.VISIBLE);
+            }
+
+            final int idx = mProgressBatchPkgs.indexOf(pkg);
+            if (idx >= 0 && idx < mProgressSegmentBar.getChildCount()) {
+                final GradientDrawable segBg = new GradientDrawable();
+                segBg.setCornerRadius(dp(2));
+                segBg.setColor(accent);
+                mProgressSegmentBar.getChildAt(idx).setBackground(segBg);
+            }
+
+            mProgressHeader.setText(getString(R.string.progress_list_header,
+                    mProgressDoneCount, mProgressBatchPkgs.size()));
+            final int total = mProgressBatchPkgs.size();
+            if (total > 0) {
+                mProgressRing.setProgressCompat(Math.max(0, Math.min(100,
+                        Math.round(mProgressDoneCount * 100f / total))), true);
+            }
         });
     }
 
     private void hideProgress() {
-        mProgressBar.setVisibility(View.GONE);
-        mProgressRow.setVisibility(View.GONE);
+        mProgressOverlay.setVisibility(View.GONE);
         mBackupBtn.setEnabled(true);
         mRestoreSelectedBtn.setEnabled(true);
         mDeleteSelectedBtn.setEnabled(true);
