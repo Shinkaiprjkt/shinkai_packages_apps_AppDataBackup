@@ -1132,12 +1132,14 @@ public class BackupManageActivity extends Activity {
 
     /**
      * Full progress state for a batch backup/restore run: a segment per app
-     * in {@code pkgs} (filled in as each finishes), a circular avatar+ring
-     * for whichever app is currently being processed, and an expandable
-     * list of every app in the batch with its own status. All of this is
-     * driven from real per-package callback events -- the underlying
-     * backup engine only reports progress at the package level (not per
-     * component like APK/data/media), so that's the granularity shown here.
+     * in {@code pkgs} (filled in as each finishes), a circular avatar with a
+     * continuously spinning indeterminate ring for whichever app is
+     * currently being processed, and an expandable list of every app in the
+     * batch with its own status. The ring spins rather than filling to a
+     * percentage because the underlying backup engine only reports progress
+     * at the package level (not per component like APK/data/obb) -- a
+     * specific fill amount would be fabricated. The segment bar and the
+     * "done" count are the real, discrete progress signal.
      */
     private void startProgressUi(List<String> pkgs) {
         mMainHandler.post(() -> {
@@ -1183,8 +1185,7 @@ public class BackupManageActivity extends Activity {
 
             mProgressHeader.setText(
                     getString(R.string.progress_list_header, 0, pkgs.size()));
-            mProgressRing.setIndeterminate(false);
-            mProgressRing.setProgressCompat(0, false);
+            mProgressRing.setIndeterminate(true);
             mProgressAppName.setText("");
             mProgressSubtitle.setText("");
             mProgressOverlay.setVisibility(View.VISIBLE);
@@ -1235,11 +1236,6 @@ public class BackupManageActivity extends Activity {
 
             mProgressHeader.setText(getString(R.string.progress_list_header,
                     mProgressDoneCount, mProgressBatchPkgs.size()));
-            final int total = mProgressBatchPkgs.size();
-            if (total > 0) {
-                mProgressRing.setProgressCompat(Math.max(0, Math.min(100,
-                        Math.round(mProgressDoneCount * 100f / total))), true);
-            }
         });
     }
 
