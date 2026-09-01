@@ -399,16 +399,20 @@
                 android:paddingBottom="16dp">
 
                 <FrameLayout
-                    android:layout_width="176dp"
-                    android:layout_height="176dp">
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clipChildren="false">
 
                     <com.google.android.material.progressindicator.CircularProgressIndicator
                         android:id="@+id/progress_ring"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        style="@style/Widget.Material3Expressive.CircularProgressIndicator.Wavy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:indeterminate="false"
                         app:indicatorSize="176dp"
                         app:trackThickness="8dp"
+                        app:wavelength="70dp"
+                        app:waveAmplitude="5dp"
                         app:indicatorColor="?attr/colorPrimary"
                         app:trackColor="?attr/colorSurfaceVariant" />
 

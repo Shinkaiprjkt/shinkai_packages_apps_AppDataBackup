@@ -20,19 +20,20 @@ import android.app.Activity;
 import android.app.appbackup.AppDataBackupRestoreManager;
 import android.app.appbackup.BackupRecord;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.StatFs;
 import android.os.UserHandle;
-import android.util.Log;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.TextView;
 
-import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.progressindicator.LinearProgressIndicator;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.color.DynamicColors;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
@@ -42,11 +43,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Simple Material 3 dashboard: a couple of at-a-glance overview cards plus
- * quick action tiles that jump into {@link BackupManageActivity} for the
- * actual app selection / backup management work.
- */
 public class AppDataBackupActivity extends Activity {
 
     private static final String TAG = "AppDataBackupUI";
@@ -58,16 +54,13 @@ public class AppDataBackupActivity extends Activity {
             new SimpleDateFormat("MMM d, HH:mm", Locale.getDefault());
 
     private File mBackupDir;
-
     private TextView mLastBackupValue;
-    private TextView mLastBackupTime;
-    private TextView mStorageUsed;
-    private TextView mStorageBackupUsed;
-    private LinearProgressIndicator mStorageTotalBar;
-    private LinearProgressIndicator mStorageBackupBar;
+    private TextView mTvDeviceName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        DynamicColors.applyToActivityIfAvailable(this);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
@@ -76,16 +69,30 @@ public class AppDataBackupActivity extends Activity {
         mBackupDir = new File("/data/media/" + UserHandle.myUserId() + "/AppDataBackup");
 
         mLastBackupValue = findViewById(R.id.tv_last_backup_value);
-        mLastBackupTime = findViewById(R.id.tv_last_backup_time);
-        mStorageUsed = findViewById(R.id.tv_storage_used);
-        mStorageBackupUsed = findViewById(R.id.tv_storage_backup_used);
-        mStorageTotalBar = findViewById(R.id.progress_storage_total);
-        mStorageBackupBar = findViewById(R.id.progress_storage_backup);
+        mTvDeviceName = findViewById(R.id.tv_device_name);
 
-        final MaterialCardView backupTile = findViewById(R.id.card_action_backup);
-        final MaterialCardView restoreTile = findViewById(R.id.card_action_restore);
-        backupTile.setOnClickListener(v -> openManage(BackupManageActivity.TAB_APPS));
-        restoreTile.setOnClickListener(v -> openManage(BackupManageActivity.TAB_BACKUPS));
+        if (mTvDeviceName != null) {
+            mTvDeviceName.setText(getDeviceMarketName());
+        }
+
+        final MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            toolbar.setNavigationOnClickListener(v -> finish());
+        }
+
+        final View btnBackupNow = findViewById(R.id.btn_backup_now);
+        final View backupTile = findViewById(R.id.card_action_backup);
+        final View restoreTile = findViewById(R.id.card_action_restore);
+
+        if (btnBackupNow != null) {
+            btnBackupNow.setOnClickListener(v -> openManage(BackupManageActivity.TAB_APPS));
+        }
+        if (backupTile != null) {
+            backupTile.setOnClickListener(v -> openManage(BackupManageActivity.TAB_APPS));
+        }
+        if (restoreTile != null) {
+            restoreTile.setOnClickListener(v -> openManage(BackupManageActivity.TAB_BACKUPS));
+        }
     }
 
     @Override
@@ -115,69 +122,57 @@ public class AppDataBackupActivity extends Activity {
             final int backedUpCount = packages.size();
             final long latestMs = latest;
 
-            long totalBytes = 0;
-            long freeBytes = 0;
-            try {
-                final StatFs stat = new StatFs("/data");
-                totalBytes = stat.getTotalBytes();
-                freeBytes = stat.getAvailableBytes();
-            } catch (Exception e) {
-                Log.w(TAG, "statfs failed", e);
-            }
-            final long usedBytes = Math.max(0, totalBytes - freeBytes);
-            final long backupBytes = dirSize(mBackupDir);
-            final long totalBytesFinal = totalBytes;
-
-            mMainHandler.post(() -> bindOverview(
-                    backedUpCount, latestMs, usedBytes, backupBytes, totalBytesFinal));
+            mMainHandler.post(() -> bindOverview(backedUpCount, latestMs));
         });
     }
 
-    private void bindOverview(int backedUpCount, long latestMs,
-            long usedBytes, long backupBytes, long totalBytes) {
+    private void bindOverview(int backedUpCount, long latestMs) {
+        if (mLastBackupValue == null) return;
+
         if (backedUpCount == 0) {
-            mLastBackupValue.setText(R.string.overview_last_backup_none);
-            mLastBackupTime.setVisibility(View.GONE);
+            mLastBackupValue.setText("No Backup Yet");
         } else {
-            mLastBackupValue.setText(backedUpCount == 1
-                    ? getString(R.string.overview_last_backup_summary_one)
-                    : getString(R.string.overview_last_backup_summary, backedUpCount));
-            mLastBackupTime.setText(getString(R.string.overview_last_backup_time,
-                    mDateFormat.format(new Date(latestMs))));
-            mLastBackupTime.setVisibility(View.VISIBLE);
-        }
-
-        if (totalBytes > 0) {
-            final int usedPct = (int) Math.max(0, Math.min(100,
-                    Math.round(usedBytes * 100f / totalBytes)));
-            final int backupPct = (int) Math.max(0, Math.min(100,
-                    Math.round(backupBytes * 100f / totalBytes)));
-            mStorageUsed.setText(getString(R.string.overview_storage_used,
-                    usedPct, formatBytes(usedBytes), formatBytes(totalBytes)));
-            mStorageBackupUsed.setText(getString(R.string.overview_storage_backup_used,
-                    backupPct, formatBytes(backupBytes), formatBytes(totalBytes)));
-            mStorageTotalBar.setProgressCompat(usedPct, false);
-            mStorageBackupBar.setProgressCompat(backupPct, false);
+            mLastBackupValue.setText("Active • Last: " + mDateFormat.format(new Date(latestMs)));
         }
     }
 
-    private static long dirSize(File dir) {
-        if (dir == null || !dir.exists()) return 0;
-        final File[] files = dir.listFiles();
-        if (files == null) return 0;
-        long size = 0;
-        for (File f : files) {
-            size += f.isDirectory() ? dirSize(f) : f.length();
+    private String getDeviceMarketName() {
+        String deviceName = Settings.Global.getString(
+                getContentResolver(),
+                Settings.Global.DEVICE_NAME
+        );
+
+        if (deviceName != null && !deviceName.trim().isEmpty()) {
+            return deviceName;
         }
-        return size;
+
+        String marketName = getSystemProperty("ro.product.marketname", "");
+        if (!marketName.trim().isEmpty()) {
+            return marketName;
+        }
+
+        String model = getSystemProperty("ro.product.model", Build.MODEL);
+
+        String manufacturer = Build.MANUFACTURER;
+        if (!model.toLowerCase().startsWith(manufacturer.toLowerCase())) {
+            return capitalize(manufacturer) + " " + model;
+        }
+
+        return model;
     }
 
-    private static String formatBytes(long bytes) {
-        if (bytes < 0) return "?";
-        if (bytes < 1024) return bytes + " B";
-        if (bytes < 1024 * 1024) return String.format(Locale.US, "%.1f KB", bytes / 1024.0);
-        if (bytes < 1024 * 1024 * 1024)
-            return String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024));
-        return String.format(Locale.US, "%.2f GB", bytes / (1024.0 * 1024 * 1024));
+    private String getSystemProperty(String key, String defaultValue) {
+        try {
+            Class<?> systemProperties = Class.forName("android.os.SystemProperties");
+            Method get = systemProperties.getMethod("get", String.class, String.class);
+            return (String) get.invoke(systemProperties, key, defaultValue);
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) return "";
+        return Character.toUpperCase(str.charAt(0)) + str.substring(1);
     }
 }

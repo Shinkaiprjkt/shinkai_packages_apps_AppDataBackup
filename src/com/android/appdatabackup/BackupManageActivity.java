@@ -65,9 +65,12 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingtoolbar.FloatingToolbarLayout;
+import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.loadingindicator.LoadingIndicator;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
+import com.google.android.material.shape.RelativeCornerSize;
+import com.google.android.material.shape.ShapeAppearanceModel;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.android.material.textfield.TextInputEditText;
@@ -1167,7 +1170,7 @@ public class BackupManageActivity extends Activity {
                 if (i > 0) lp.leftMargin = dp(3);
                 segment.setLayoutParams(lp);
                 final GradientDrawable segBg = new GradientDrawable();
-                segBg.setCornerRadius(dp(2));
+                segBg.setCornerRadii(segmentCornerRadii(i, pkgs.size()));
                 segBg.setColor(segColorPending);
                 segment.setBackground(segBg);
                 mProgressSegmentBar.addView(segment);
@@ -1201,7 +1204,7 @@ public class BackupManageActivity extends Activity {
         mMainHandler.post(() -> {
             mProgressAppName.setText(label);
             mProgressSubtitle.setText(subtitle);
-            bindAvatar(mProgressAvatarBox, mProgressImgAvatar, mProgressTvAvatar, label, pkg);
+            bindAvatar(mProgressAvatarBox, mProgressImgAvatar, mProgressTvAvatar, label, pkg, true);
             final View row = mProgressRowByPkg.get(pkg);
             if (row != null) {
                 row.findViewById(R.id.img_status).setVisibility(View.GONE);
@@ -1229,7 +1232,7 @@ public class BackupManageActivity extends Activity {
             final int idx = mProgressBatchPkgs.indexOf(pkg);
             if (idx >= 0 && idx < mProgressSegmentBar.getChildCount()) {
                 final GradientDrawable segBg = new GradientDrawable();
-                segBg.setCornerRadius(dp(2));
+                segBg.setCornerRadii(segmentCornerRadii(idx, mProgressBatchPkgs.size()));
                 segBg.setColor(accent);
                 mProgressSegmentBar.getChildAt(idx).setBackground(segBg);
             }
@@ -1251,8 +1254,50 @@ public class BackupManageActivity extends Activity {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
+    /**
+     * Corner radii for one piece of the top segment bar. Only the very first
+     * segment gets rounded start corners and only the very last segment gets
+     * rounded end corners; every corner in between is square. Rounding all
+     * four corners of every segment (the old behavior) made each piece read
+     * as its own separate pill/capsule once split apart by the gap margin,
+     * so with just two segments the bar looked cut in half instead of like
+     * one continuous track. Order matches
+     * {@link GradientDrawable#setCornerRadii(float[])}: top-left x/y,
+     * top-right x/y, bottom-right x/y, bottom-left x/y.
+     */
+    private float[] segmentCornerRadii(int index, int count) {
+        final float r = dp(2);
+        final boolean first = index == 0;
+        final boolean last = index == count - 1;
+        return new float[]{
+                first ? r : 0f, first ? r : 0f,
+                last ? r : 0f, last ? r : 0f,
+                last ? r : 0f, last ? r : 0f,
+                first ? r : 0f, first ? r : 0f
+        };
+    }
+
     private void bindAvatar(FrameLayout box, ImageView icon, TextView initial,
             String label, String key) {
+        bindAvatar(box, icon, initial, label, key, false);
+    }
+
+    /**
+     * @param circular when true, forces a perfect circle for both the real app
+     *                 icon (clips the ShapeableImageView to a 50% corner size)
+     *                 and the initials fallback (OVAL background) — used for the
+     *                 large avatar on the Processing screen so it matches the
+     *                 round wavy progress ring around it. List rows keep the
+     *                 regular rounded-square look by passing false.
+     */
+    private void bindAvatar(FrameLayout box, ImageView icon, TextView initial,
+            String label, String key, boolean circular) {
+        if (circular && icon instanceof ShapeableImageView) {
+            ((ShapeableImageView) icon).setShapeAppearanceModel(
+                    ShapeAppearanceModel.builder()
+                            .setAllCornerSizes(new RelativeCornerSize(0.5f))
+                            .build());
+        }
         final Drawable appIcon = loadAppIcon(key);
         if (appIcon != null) {
             box.setBackground(null);
@@ -1265,8 +1310,12 @@ public class BackupManageActivity extends Activity {
         icon.setImageDrawable(null);
         initial.setVisibility(View.VISIBLE);
         final GradientDrawable bg = new GradientDrawable();
-        bg.setShape(GradientDrawable.RECTANGLE);
-        bg.setCornerRadius(dp(14));
+        if (circular) {
+            bg.setShape(GradientDrawable.OVAL);
+        } else {
+            bg.setShape(GradientDrawable.RECTANGLE);
+            bg.setCornerRadius(dp(14));
+        }
         bg.setColor(themeColor(com.google.android.material.R.attr.colorPrimaryContainer));
         box.setBackground(bg);
         final String text = (label == null || label.isEmpty())
