@@ -47,6 +47,7 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -1072,7 +1073,7 @@ public class BackupManageActivity extends Activity {
 
                     @Override
                     public void onPackageDataRestoring(String token, String pkg) {
-                        updateProgressSubtitle(getString(R.string.progress_restoring_data));
+                        updateProgress(getString(R.string.progress_restoring_data));
                     }
 
                     @Override
