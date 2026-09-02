@@ -25,6 +25,8 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
     <application
         android:name=".AppDataBackupApplication"
@@ -55,6 +57,10 @@
             android:name=".OperationResultActivity"
             android:exported="false"
             android:label="@string/app_name" />
+
+        <activity
+            android:name=".MediaBackupActivity"
+            android:exported="false" />
 
     </application>
 </manifest>
