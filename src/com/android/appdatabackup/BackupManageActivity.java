@@ -64,7 +64,6 @@ import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.floatingtoolbar.FloatingToolbarLayout;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.loadingindicator.LoadingIndicator;
 import com.google.android.material.snackbar.Snackbar;
@@ -128,7 +127,7 @@ public class BackupManageActivity extends Activity {
 
     private TabLayout mTabLayout;
     private ViewPager2 mViewPager;
-    private FloatingToolbarLayout mFloatingToolbar;
+    private LinearLayout mFloatingToolbar;
     private MaterialButton mBackupBtn;
     private MaterialButton mExcludeCacheBtn;
     private LoadingIndicator mLoadingIndicator;
@@ -148,7 +147,7 @@ public class BackupManageActivity extends Activity {
     private final List<String> mProgressBatchPkgs = new ArrayList<>();
     private final Map<String, View> mProgressRowByPkg = new HashMap<>();
     private int mProgressDoneCount;
-    private FloatingToolbarLayout mBackupsToolbar;
+    private LinearLayout mBackupsToolbar;
     private MaterialButton mRestoreSelectedBtn;
     private MaterialButton mDeleteSelectedBtn;
     private TextView mSummaryCount;
@@ -455,6 +454,18 @@ public class BackupManageActivity extends Activity {
                         position == 0 ? View.VISIBLE : View.GONE);
             }
         });
+    }
+
+    /**
+     * Shows whichever bottom bar belongs to the currently active tab
+     * (Apps or Backups) and hides the other. Used to restore the bars
+     * after {@link #hideProgress()}, since they're hidden unconditionally
+     * while an operation is running.
+     */
+    private void updateToolbarsVisibilityForTab() {
+        final int position = mViewPager.getCurrentItem();
+        mFloatingToolbar.setVisibility(position == 0 ? View.VISIBLE : View.GONE);
+        mBackupsToolbar.setVisibility(position == 1 ? View.VISIBLE : View.GONE);
     }
 
     private void updateSummary() {
@@ -1123,6 +1134,8 @@ public class BackupManageActivity extends Activity {
             mProgressAppName.setText("");
             mProgressSubtitle.setText(message);
             mProgressOverlay.setVisibility(View.VISIBLE);
+            mFloatingToolbar.setVisibility(View.GONE);
+            mBackupsToolbar.setVisibility(View.GONE);
             mBackupBtn.setEnabled(false);
             mRestoreSelectedBtn.setEnabled(false);
             mDeleteSelectedBtn.setEnabled(false);
@@ -1192,6 +1205,8 @@ public class BackupManageActivity extends Activity {
             mProgressAppName.setText("");
             mProgressSubtitle.setText("");
             mProgressOverlay.setVisibility(View.VISIBLE);
+            mFloatingToolbar.setVisibility(View.GONE);
+            mBackupsToolbar.setVisibility(View.GONE);
             mBackupBtn.setEnabled(false);
             mRestoreSelectedBtn.setEnabled(false);
             mDeleteSelectedBtn.setEnabled(false);
@@ -1244,6 +1259,7 @@ public class BackupManageActivity extends Activity {
 
     private void hideProgress() {
         mProgressOverlay.setVisibility(View.GONE);
+        updateToolbarsVisibilityForTab();
         mBackupBtn.setEnabled(true);
         mRestoreSelectedBtn.setEnabled(true);
         mDeleteSelectedBtn.setEnabled(true);

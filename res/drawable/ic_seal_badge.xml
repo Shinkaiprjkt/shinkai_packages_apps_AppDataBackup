@@ -14,12 +14,34 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<!-- A 12-lobe scalloped "seal" badge, filled white so it can be tinted
-     (success -> colorPrimaryContainer, failure -> colorErrorContainer)
-     via app:tint / setImageTintList at runtime. -->
+<!-- Checkmark drawn on top of ic_seal_badge (img_badge_icon), filled/stroked
+     white so it can be tinted (success -> colorOnPrimaryContainer) via
+     app:tint / setImageTintList at runtime, same as the badge background.
+     The "tick" path's trimPathEnd is animated 0 -> 1 by avd_check_draw for
+     the draw-in effect. "background" is a pivoted group (pivotX/Y = center
+     of the 148x148 viewport) left over from the seal shape this asset was
+     built from. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="120dp" android:height="120dp"
-    android:viewportWidth="120" android:viewportHeight="120">
-    <path android:fillColor="@android:color/white"
-        android:pathData="M 116.00,60.00 L 111.57,65.42 L 104.16,69.39 L 102.94,73.95 L 107.37,81.09 L 108.50,88.00 L 101.95,90.48 L 93.55,90.21 L 90.21,93.55 L 90.48,101.95 L 88.00,108.50 L 81.09,107.37 L 73.95,102.94 L 69.39,104.16 L 65.42,111.57 L 60.00,116.00 L 54.58,111.57 L 50.61,104.16 L 46.05,102.94 L 38.91,107.37 L 32.00,108.50 L 29.52,101.95 L 29.79,93.55 L 26.45,90.21 L 18.05,90.48 L 11.50,88.00 L 12.63,81.09 L 17.06,73.95 L 15.84,69.39 L 8.43,65.42 L 4.00,60.00 L 8.43,54.58 L 15.84,50.61 L 17.06,46.05 L 12.63,38.91 L 11.50,32.00 L 18.05,29.52 L 26.45,29.79 L 29.79,26.45 L 29.52,18.05 L 32.00,11.50 L 38.91,12.63 L 46.05,17.06 L 50.61,15.84 L 54.58,8.43 L 60.00,4.00 L 65.42,8.43 L 69.39,15.84 L 73.95,17.06 L 81.09,12.63 L 88.00,11.50 L 90.48,18.05 L 90.21,26.45 L 93.55,29.79 L 101.95,29.52 L 108.50,32.00 L 107.37,38.91 L 102.94,46.05 L 104.16,50.61 L 111.57,54.58 Z" />
+    android:name="vector"
+    android:width="148dp" android:height="148dp"
+    android:viewportWidth="148" android:viewportHeight="148">
+    <group android:name="group">
+        <group
+            android:name="background"
+            android:pivotX="74"
+            android:pivotY="74">
+            <path
+                android:fillColor="@android:color/white"
+                android:strokeWidth="1"
+                android:pathData="M 65.2 3.7 C 70.4 -0.3 77.6 -0.3 82.8 3.7 C 86.3 6.3 90.7 7.3 94.9 6.3 C 101.3 4.8 107.8 7.7 111 13.5 C 113.1 17.3 116.8 20 121 20.8 C 127.4 22 132.2 27.4 132.8 33.9 C 133.2 38.2 135.4 42.2 139 44.7 C 144.4 48.4 146.6 55.3 144.4 61.5 C 143 65.6 143.4 70.1 145.7 73.8 C 149.1 79.4 148.3 86.6 143.9 91.3 C 140.9 94.5 139.5 98.8 140.1 103.1 C 140.9 109.6 137.3 115.8 131.3 118.4 C 127.3 120.1 124.2 123.5 123 127.6 C 121.1 133.9 115.3 138.1 108.7 138 C 104.4 138 100.2 139.8 97.4 143.1 C 93.1 148.1 86.1 149.6 80.2 146.8 C 76.3 144.9 71.7 144.9 67.8 146.8 C 61.9 149.6 54.8 148.1 50.6 143.1 C 47.8 139.8 43.6 138 39.3 138 C 32.8 138.1 26.9 133.9 25 127.6 C 23.7 123.4 20.7 120.1 16.7 118.4 C 10.7 115.9 7.1 109.6 7.9 103.1 C 8.5 98.8 7 94.5 4.1 91.3 C -0.4 86.5 -1.1 79.4 2.3 73.8 C 4.6 70.1 5 65.6 3.6 61.5 C 1.4 55.3 3.6 48.5 9 44.7 C 12.6 42.2 14.9 38.3 15.2 33.9 C 15.7 27.4 20.6 22 27 20.8 C 31.3 20 35 17.3 37 13.5 C 40.1 7.8 46.7 4.8 53.1 6.3 C 57.3 7.3 61.8 6.3 65.2 3.7 Z" />
+        </group>
+        <path
+            android:name="tick"
+            android:strokeColor="@android:color/white"
+            android:strokeWidth="12"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:trimPathEnd="0"
+            android:pathData="M 40.9 76.4 L 61.4 96.9 L 107.1 51.1" />
+    </group>
 </vector>

@@ -14,12 +14,16 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true">
+    android:layout_height="match_parent">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar"
@@ -209,134 +213,6 @@
         android:visibility="gone"
         app:indicatorColor="?attr/colorPrimary"
         app:indicatorSize="56dp" />
-
-    <com.google.android.material.floatingtoolbar.FloatingToolbarLayout
-        android:id="@+id/floating_toolbar"
-        style="@style/Widget.Material3.FloatingToolbar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginHorizontal="@dimen/screen_margin"
-        android:layout_marginBottom="8dp">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_exclude_cache"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checkable="true"
-                android:checked="true"
-                android:contentDescription="@string/chip_exclude_cache"
-                app:icon="@drawable/ic_cache_24" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_select_all"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:contentDescription="@string/action_select_all"
-                app:icon="@drawable/ic_select_all_24" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_clear"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:contentDescription="@string/action_clear"
-                app:icon="@drawable/ic_clear_24" />
-
-            <com.google.android.material.divider.MaterialDivider
-                android:layout_width="1dp"
-                android:layout_height="32dp"
-                android:layout_marginHorizontal="10dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_backup"
-                style="@style/Widget.AppDataBackup.Button.Toolbar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/action_back_up"
-                app:icon="@drawable/ic_save_24" />
-
-        </LinearLayout>
-
-    </com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
-
-    <com.google.android.material.floatingtoolbar.FloatingToolbarLayout
-        android:id="@+id/floating_toolbar_backups"
-        style="@style/Widget.Material3.FloatingToolbar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginHorizontal="@dimen/screen_margin"
-        android:layout_marginBottom="8dp"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_select_all_backups"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:contentDescription="@string/action_select_all"
-                app:icon="@drawable/ic_select_all_24" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_clear_backups"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:contentDescription="@string/action_clear"
-                app:icon="@drawable/ic_clear_24" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_delete_selected"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:contentDescription="@string/action_delete_selected"
-                app:icon="@drawable/ic_delete_24" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_verify_all"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:contentDescription="@string/verify_all"
-                app:icon="@drawable/ic_verify_24" />
-
-            <com.google.android.material.divider.MaterialDivider
-                android:layout_width="1dp"
-                android:layout_height="32dp"
-                android:layout_marginHorizontal="10dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_restore_selected"
-                style="@style/Widget.AppDataBackup.Button.Toolbar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/restore"
-                app:icon="@drawable/ic_restore_24" />
-
-        </LinearLayout>
-
-    </com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
 
     <LinearLayout
         android:id="@+id/progress_overlay"
@@ -532,5 +408,201 @@
         </LinearLayout>
 
     </LinearLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    <LinearLayout
+        android:id="@+id/floating_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="?attr/colorSurfaceContainer"
+        android:elevation="8dp"
+        android:paddingHorizontal="4dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="24dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_exclude_cache"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:checkable="true"
+            android:checked="true"
+            android:text="@string/chip_exclude_cache"
+            android:textAllCaps="false"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/ic_cache_24"
+            app:iconGravity="textTop"
+            app:iconPadding="2dp"
+            app:iconSize="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_select_all"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/action_select_all"
+            android:textAllCaps="false"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/ic_select_all_24"
+            app:iconGravity="textTop"
+            app:iconPadding="2dp"
+            app:iconSize="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_clear"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/action_clear"
+            android:textAllCaps="false"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/ic_clear_24"
+            app:iconGravity="textTop"
+            app:iconPadding="2dp"
+            app:iconSize="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_backup"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/action_back_up"
+            android:textAllCaps="false"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/ic_save_24"
+            app:iconGravity="textTop"
+            app:iconPadding="2dp"
+            app:iconSize="20dp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/floating_toolbar_backups"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="?attr/colorSurfaceContainer"
+        android:elevation="8dp"
+        android:paddingHorizontal="4dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="24dp"
+        android:visibility="gone">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_select_all_backups"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/action_select_all"
+            android:textAllCaps="false"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/ic_select_all_24"
+            app:iconGravity="textTop"
+            app:iconPadding="2dp"
+            app:iconSize="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_clear_backups"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/action_clear"
+            android:textAllCaps="false"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/ic_clear_24"
+            app:iconGravity="textTop"
+            app:iconPadding="2dp"
+            app:iconSize="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_delete_selected"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/action_delete_selected"
+            android:textAllCaps="false"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/ic_delete_24"
+            app:iconGravity="textTop"
+            app:iconPadding="2dp"
+            app:iconSize="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_verify_all"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/verify_all"
+            android:textAllCaps="false"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/ic_verify_24"
+            app:iconGravity="textTop"
+            app:iconPadding="2dp"
+            app:iconSize="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_restore_selected"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/restore"
+            android:textAllCaps="false"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/ic_restore_24"
+            app:iconGravity="textTop"
+            app:iconPadding="2dp"
+            app:iconSize="20dp" />
+
+    </LinearLayout>
+
+</FrameLayout>
